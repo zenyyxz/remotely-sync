@@ -627,7 +627,8 @@ export const changeMobileStatusBar = (
               .getComputedStyle(k as Element)
               .getPropertyValue("height");
 
-            statusbar.setCssProps({ display: "flex", "margin-bottom": height });
+            statusbar.addClass("remotely-sync-mobile-status-bar");
+            statusbar.setCssProps({ "margin-bottom": height });
           }
         }
       }
@@ -647,7 +648,8 @@ export const changeMobileStatusBar = (
       )[0] as HTMLElement;
       // thanks to community's solution
       const height = window.getComputedStyle(navBar).getPropertyValue("height");
-      statusbar.setCssProps({ display: "flex", "margin-bottom": height });
+      statusbar.addClass("remotely-sync-mobile-status-bar");
+      statusbar.setCssProps({ "margin-bottom": height });
     } catch (e) {
       // skip
     }
@@ -660,7 +662,8 @@ export const changeMobileStatusBar = (
       // biome-ignore lint/style/noParameterAssign: we want gc
       oldAppContainerObserver = undefined;
     }
-    statusbar.setCssProps({ display: "", "margin-bottom": "" });
+    statusbar.removeClass("remotely-sync-mobile-status-bar");
+    statusbar.setCssProps({ "margin-bottom": "" });
     return undefined;
   }
 };

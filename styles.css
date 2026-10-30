@@ -8,6 +8,10 @@
   overflow-wrap: break-word;
 }
 
+.remotely-sync-mobile-status-bar {
+  display: flex;
+}
+
 .password-disclaimer {
   font-weight: bold;
 }
