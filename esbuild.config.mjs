@@ -37,6 +37,10 @@ esbuild
     },
     entryPoints: ["./src/main.ts"],
     bundle: true,
+    alias: {
+      localforage: "./node_modules/localforage/src/localforage.js",
+      "lie/polyfill": "./src/nativePromiseRequired.js",
+    },
     external: [
       "obsidian",
       "electron",

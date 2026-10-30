@@ -1,8 +1,8 @@
 {
   "id": "remotely-sync",
   "name": "NoteHarbor Sync",
-  "version": "1.0.2",
-  "minAppVersion": "0.13.21",
+  "version": "1.0.3",
+  "minAppVersion": "0.16.2",
   "description": "Synchronize vault files across devices using your choice of cloud storage.",
   "author": "zenyyxz",
   "authorUrl": "https://github.com/zenyyxz",

@@ -90,6 +90,13 @@ module.exports = {
   },
   resolve: {
     extensions: [".tsx", ".ts", ".js"],
+    alias: {
+      localforage$: path.resolve(
+        __dirname,
+        "node_modules/localforage/src/localforage.js"
+      ),
+      "lie/polyfill$": path.resolve(__dirname, "src/nativePromiseRequired.js"),
+    },
     mainFields: ["browser", "module", "main"],
     fallback: {
       // assert: require.resolve("assert"),

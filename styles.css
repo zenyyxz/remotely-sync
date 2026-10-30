@@ -4,6 +4,10 @@
   font-weight: bold;
 }
 
+.remotely-sync-settings {
+  overflow-wrap: break-word;
+}
+
 .password-disclaimer {
   font-weight: bold;
 }

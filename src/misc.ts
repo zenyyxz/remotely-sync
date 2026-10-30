@@ -520,9 +520,61 @@ export const compareVersion = (x: string | null, y: string | null) => {
  * @returns
  */
 export const stringToFragment = (string: string) => {
-  const wrapper = document.createElement("template");
-  wrapper.innerHTML = string;
-  return wrapper.content;
+  const parsed = new DOMParser().parseFromString(string, "text/html");
+  const fragment = document.createDocumentFragment();
+  const allowedTags = new Set([
+    "a",
+    "b",
+    "br",
+    "code",
+    "em",
+    "i",
+    "li",
+    "ol",
+    "p",
+    "strong",
+    "ul",
+  ]);
+  const discardedTags = new Set([
+    "embed",
+    "iframe",
+    "object",
+    "script",
+    "style",
+  ]);
+
+  const copyNode = (source: Node, target: Node) => {
+    if (source.nodeType === Node.TEXT_NODE) {
+      target.appendChild(document.createTextNode(source.textContent ?? ""));
+      return;
+    }
+    if (source.nodeType !== Node.ELEMENT_NODE) {
+      return;
+    }
+
+    const sourceElement = source as Element;
+    const tagName = sourceElement.tagName.toLowerCase();
+    if (discardedTags.has(tagName)) {
+      return;
+    }
+    if (!allowedTags.has(tagName)) {
+      sourceElement.childNodes.forEach((child) => copyNode(child, target));
+      return;
+    }
+
+    const element = document.createElement(tagName);
+    if (tagName === "a") {
+      const href = sourceElement.getAttribute("href");
+      if (href && /^https?:\/\/[^\s]+$/i.test(href)) {
+        element.setAttribute("href", href);
+      }
+    }
+    sourceElement.childNodes.forEach((child) => copyNode(child, element));
+    target.appendChild(element);
+  };
+
+  parsed.body.childNodes.forEach((child) => copyNode(child, fragment));
+  return fragment;
 };
 
 /**
@@ -566,8 +618,8 @@ export const changeMobileStatusBar = (
         if (mutation.type === "childList" && mutation.addedNodes.length > 0) {
           const k = mutation.addedNodes[0] as Element;
           if (
-            k.className.contains("mobile-navbar") ||
-            k.className.contains("mobile-toolbar")
+            k.classList.contains("mobile-navbar") ||
+            k.classList.contains("mobile-toolbar")
           ) {
             // have to wait, otherwise the height is not correct??
             await delay(300);
@@ -575,8 +627,7 @@ export const changeMobileStatusBar = (
               .getComputedStyle(k as Element)
               .getPropertyValue("height");
 
-            statusbar.style.setProperty("display", "flex");
-            statusbar.style.setProperty("margin-bottom", height);
+            statusbar.setCssProps({ display: "flex", "margin-bottom": height });
           }
         }
       }
@@ -596,8 +647,7 @@ export const changeMobileStatusBar = (
       )[0] as HTMLElement;
       // thanks to community's solution
       const height = window.getComputedStyle(navBar).getPropertyValue("height");
-      statusbar.style.setProperty("display", "flex");
-      statusbar.style.setProperty("margin-bottom", height);
+      statusbar.setCssProps({ display: "flex", "margin-bottom": height });
     } catch (e) {
       // skip
     }
@@ -610,8 +660,7 @@ export const changeMobileStatusBar = (
       // biome-ignore lint/style/noParameterAssign: we want gc
       oldAppContainerObserver = undefined;
     }
-    statusbar.style.removeProperty("display");
-    statusbar.style.removeProperty("margin-bottom");
+    statusbar.setCssProps({ display: "", "margin-bottom": "" });
     return undefined;
   }
 };

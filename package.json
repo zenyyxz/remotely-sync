@@ -1,6 +1,6 @@
 {
   "name": "remotely-sync",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "Synchronize vault files across devices using your choice of cloud storage.",
   "scripts": {
     "dev2": "node esbuild.config.mjs --watch",
@@ -20,6 +20,10 @@
     "url": "url/",
     "fs": false,
     "vm": false
+  },
+  "overrides": {
+    "basic-ftp": "6.2.4",
+    "uuid": "11.1.1"
   },
   "source": "main.ts",
   "keywords": [],

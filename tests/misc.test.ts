@@ -192,6 +192,34 @@ describe("Misc: extract svg", () => {
   });
 });
 
+describe("Misc: sanitize HTML fragments", () => {
+  beforeEach(() => {
+    const fakeBrowser = new JSDOM("");
+    Object.assign(globalThis, {
+      document: fakeBrowser.window.document,
+      DOMParser: fakeBrowser.window.DOMParser,
+      Node: fakeBrowser.window.Node,
+    });
+  });
+
+  it("preserves safe formatting and removes unsafe HTML", () => {
+    const fragment = misc.stringToFragment(
+      '<p>safe <strong>text</strong><script>window.injected=true</script><a href="javascript:alert(1)">unsafe</a><a href="https://example.com">link</a></p>'
+    );
+    const container = document.createElement("div");
+    container.append(fragment);
+
+    assert.equal(container.querySelector("script"), null);
+    assert.equal(container.querySelector('a[href^="javascript:"]'), null);
+    assert.equal(container.querySelector("strong")?.textContent, "text");
+    assert.equal(
+      container.querySelector('a[href="https://example.com"]')?.textContent,
+      "link"
+    );
+    assert.match(container.textContent ?? "", /safe textunsafelink/);
+  });
+});
+
 describe("Misc: get split ranges", () => {
   it("should deal with big parts", () => {
     const k = misc.getSplitRanges(10, 20);
