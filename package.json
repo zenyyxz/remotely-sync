@@ -1,7 +1,7 @@
 {
   "name": "remotely-sync",
-  "version": "1.0.1",
-  "description": "An unofficial Obsidian plugin for synchronizing notes across devices using cloud storage.",
+  "version": "1.0.2",
+  "description": "Synchronize vault files across devices using your choice of cloud storage.",
   "scripts": {
     "dev2": "node esbuild.config.mjs --watch",
     "build2": "npm run build",

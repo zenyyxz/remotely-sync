@@ -1,6 +1,6 @@
-# Remotely Sync
+# NoteHarbor Sync
 
-Remotely Sync is an unofficial Obsidian plugin that syncs a vault between devices through cloud storage. It is not Obsidian's official [Sync service](https://obsidian.md/sync).
+NoteHarbor Sync synchronizes a vault between devices through cloud storage. It is an independent community plugin and is not Obsidian's official [Sync service](https://obsidian.md/sync).
 
 [简体中文](./README.zh-cn.md) · [GitHub repository](https://github.com/zenyyxz/remotely-sync)
 
@@ -8,11 +8,11 @@ Remotely Sync is an unofficial Obsidian plugin that syncs a vault between device
 
 **Back up your vault before the first sync.** Syncing can create, update, and remove files according to the local and remote state. Review the selected remote location and settings before starting.
 
-All Remotely Sync features are free to use; no Remotely Sync account or subscription is required. You must still authorize your chosen storage provider, and that provider may charge for storage, requests, or data transfer.
+All NoteHarbor Sync features are free to use; no NoteHarbor Sync account or subscription is required. You must still authorize your chosen storage provider, and that provider may charge for storage, requests, or data transfer.
 
 ## Pick a storage provider
 
-Remotely Sync supports:
+NoteHarbor Sync supports:
 
 - **S3 and compatible storage:** Amazon S3, Cloudflare R2, Backblaze B2, MinIO, Storj, Tencent Cloud COS, and others. See the [service overview](./docs/services_connectable_or_not.md) and [S3 policy guide](./docs/remote_services/s3_general/s3_user_policy.md).
 - **Cloud file providers:** Dropbox, personal OneDrive (App Folder or full access), Google Drive, Box, pCloud, Yandex Disk, and Koofr.
@@ -22,7 +22,7 @@ Browse the [provider setup guides](./docs/remote_services/).
 
 ## Set up the first sync
 
-1. Install **Remotely Sync** from Obsidian's Community plugins, or get the files from the [GitHub releases](https://github.com/zenyyxz/remotely-sync/releases).
+1. Install **NoteHarbor Sync** from Obsidian's Community plugins, or get the files from the [GitHub releases](https://github.com/zenyyxz/remotely-sync/releases).
 2. Open the plugin settings, choose a provider, and enter its endpoint, bucket/container, or other required connection details.
 3. Authorize the provider or test the connection using the controls shown in settings. Credentials are stored in Obsidian's plugin data; do not share `data.json`.
 4. Review the remote directory and sync options. Hidden paths may be skipped by default, and the `.obsidian` configuration folder has a separate option.
@@ -54,7 +54,7 @@ If a sync result is unexpected, pause automatic syncing and preserve both local 
 
 ## Project and support
 
-Remotely Sync is an independent project based on the open-source Remotely Save codebase. Report issues or suggestions in the [GitHub repository](https://github.com/zenyyxz/remotely-sync). Cloud providers may charge fees and impose usage limits; check their terms before syncing.
+NoteHarbor Sync is an independent project based on the open-source Remotely Save codebase. Report issues or suggestions in the [GitHub repository](https://github.com/zenyyxz/remotely-sync). Cloud providers may charge fees and impose usage limits; check their terms before syncing.
 
 See the [Privacy Policy](./PRIVACY_POLICY.md) for information about data handled by the plugin and Google Drive authorization service.
 
