@@ -33,12 +33,18 @@ describe("Encryption OpenSSL tests", () => {
     assert.notEqual(res1, res2);
   });
 
-  it("should raise error using different password", async () => {
+  it("should not return the original string using a different password", async () => {
     const k = "secret text";
     const password = "hey";
     const password2 = "hey2";
     const enc = await encryptStringToBase32(k, password);
-    await assert.rejects(decryptBase32ToString(enc, password2));
+    let decrypted: string | undefined;
+    try {
+      decrypted = await decryptBase32ToString(enc, password2);
+    } catch {
+      // AES-CBC may reject invalid padding for a wrong password.
+    }
+    assert.notEqual(decrypted, k);
   });
 
   it("should encrypt and decrypt string and get the same result returned", async () => {
