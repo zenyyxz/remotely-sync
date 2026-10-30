@@ -78,36 +78,32 @@ describe("Encryption OpenSSL tests", () => {
   });
 
   it("should encrypt binary file and get the same result as openssl", async () => {
-    const testFolder = path.join(__dirname, "static_assets", "mona_lisa");
-    const testFileName =
-      "1374px-Mona_Lisa,_by_Leonardo_da_Vinci,_from_C2RMF_retouched.jpg";
-    const fileArrBuf = bufferToArrayBuffer(
-      await fs.readFileSync(path.join(testFolder, testFileName))
-    );
+    const fileArrBuf = Uint8Array.from(
+      { length: 64 },
+      (_, index) => index
+    ).buffer;
     const password = "somepassword";
     const saltHex = "8302F586FAB491EC";
     const enc = await encryptArrayBuffer(
       fileArrBuf,
       password,
-      undefined,
+      10000,
       saltHex
     );
-    const opensslArrBuf = bufferToArrayBuffer(
-      await fs.readFileSync(path.join(testFolder, testFileName + ".enc"))
+    const opensslCipherHex =
+      "2af832625dc9a9470e81d91078094421bf0f11a180cdb76d746faca68a3e0cc44db671173d3a51d5a619849a14a9c27e7e15158b21673f6ba881a360b3e075052001060458918974938cb17bf421b387";
+    const opensslArrBuf = Buffer.from(
+      `53616c7465645f5f${saltHex.toLowerCase()}${opensslCipherHex}`,
+      "hex"
     );
-
-    // openssl enc -p -aes-256-cbc -S 8302F586FAB491EC -pbkdf2 -iter 20000 -pass pass:somepassword -in mona_lisa/1374px-Mona_Lisa,_by_Leonardo_da_Vinci,_from_C2RMF_retouched.jpg -out mona_lisa/1374px-Mona_Lisa,_by_Leonardo_da_Vinci,_from_C2RMF_retouched.jpg.enc
-
-    assert.ok(Buffer.from(enc).equals(Buffer.from(opensslArrBuf)));
+    assert.ok(Buffer.from(enc).equals(opensslArrBuf));
   });
 
   it("should encrypt binary file not deterministically", async () => {
-    const testFolder = path.join(__dirname, "static_assets", "mona_lisa");
-    const testFileName =
-      "1374px-Mona_Lisa,_by_Leonardo_da_Vinci,_from_C2RMF_retouched.jpg";
-    const fileArrBuf = bufferToArrayBuffer(
-      await fs.readFileSync(path.join(testFolder, testFileName))
-    );
+    const fileArrBuf = Uint8Array.from(
+      { length: 64 },
+      (_, index) => index
+    ).buffer;
     const password = "somepassword";
     const res1 = await encryptArrayBuffer(fileArrBuf, password);
     const res2 = await encryptArrayBuffer(fileArrBuf, password);
@@ -116,19 +112,19 @@ describe("Encryption OpenSSL tests", () => {
   });
 
   it("should decrypt binary file and get the same result as openssl", async () => {
-    const testFolder = path.join(__dirname, "static_assets", "mona_lisa");
-    const testFileName =
-      "1374px-Mona_Lisa,_by_Leonardo_da_Vinci,_from_C2RMF_retouched.jpg";
-    const fileArrBuf = bufferToArrayBuffer(
-      await fs.readFileSync(path.join(testFolder, testFileName + ".enc"))
+    const opensslCipherHex =
+      "2af832625dc9a9470e81d91078094421bf0f11a180cdb76d746faca68a3e0cc44db671173d3a51d5a619849a14a9c27e7e15158b21673f6ba881a360b3e075052001060458918974938cb17bf421b387";
+    const encryptedBytes = Buffer.from(
+      `53616c7465645f5f8302f586fab491ec${opensslCipherHex}`,
+      "hex"
     );
+    const fileArrBuf = bufferToArrayBuffer(encryptedBytes);
     const password = "somepassword";
-    const dec = await decryptArrayBuffer(fileArrBuf, password);
-    const opensslArrBuf = bufferToArrayBuffer(
-      await fs.readFileSync(path.join(testFolder, testFileName))
+    const dec = await decryptArrayBuffer(fileArrBuf, password, 10000);
+    const expectedBytes = Buffer.from(
+      Uint8Array.from({ length: 64 }, (_, index) => index)
     );
-
-    assert.deepEqual(Buffer.from(dec), Buffer.from(opensslArrBuf));
+    assert.deepEqual(Buffer.from(dec), expectedBytes);
   });
 
   it("should get size from origin to encrypted correctly", () => {
