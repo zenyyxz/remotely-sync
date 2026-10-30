@@ -10,6 +10,7 @@
 
 .remotely-sync-mobile-status-bar {
   display: flex;
+  margin-bottom: 48px;
 }
 
 .password-disclaimer {

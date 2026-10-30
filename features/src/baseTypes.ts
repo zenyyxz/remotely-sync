@@ -3,14 +3,16 @@
 ////////////////////////////////////////////////////////////
 
 declare global {
-  var DEFAULT_BOX_CLIENT_ID: string;
-  var DEFAULT_BOX_CLIENT_SECRET: string;
-  var DEFAULT_PCLOUD_CLIENT_ID: string;
-  var DEFAULT_PCLOUD_CLIENT_SECRET: string;
-  var DEFAULT_YANDEXDISK_CLIENT_ID: string;
-  var DEFAULT_YANDEXDISK_CLIENT_SECRET: string;
-  var DEFAULT_KOOFR_CLIENT_ID: string;
-  var DEFAULT_KOOFR_CLIENT_SECRET: string;
+  interface Window {
+    DEFAULT_BOX_CLIENT_ID: string;
+    DEFAULT_BOX_CLIENT_SECRET: string;
+    DEFAULT_PCLOUD_CLIENT_ID: string;
+    DEFAULT_PCLOUD_CLIENT_SECRET: string;
+    DEFAULT_YANDEXDISK_CLIENT_ID: string;
+    DEFAULT_YANDEXDISK_CLIENT_SECRET: string;
+    DEFAULT_KOOFR_CLIENT_ID: string;
+    DEFAULT_KOOFR_CLIENT_SECRET: string;
+  }
 }
 
 ///////////////////////////////////////////////////////////
@@ -23,8 +25,7 @@ export const MERGABLE_SIZE = 1000 * 1000; // 1 MB
 // Google Drive
 //////////////////////////////////////////////////////////
 
-export const COMMAND_CALLBACK_GOOGLEDRIVE =
-  "remotely-sync-cb-googledrive";
+export const COMMAND_CALLBACK_GOOGLEDRIVE = "remotely-sync-cb-googledrive";
 
 export interface GoogleDriveConfig {
   accessToken: string;
@@ -42,8 +43,10 @@ export interface GoogleDriveConfig {
 //////////////////////////////////////////////////////////
 
 export const COMMAND_CALLBACK_BOX = "remotely-sync-cb-box";
-export const BOX_CLIENT_ID = global.DEFAULT_BOX_CLIENT_ID;
-export const BOX_CLIENT_SECRET = global.DEFAULT_BOX_CLIENT_SECRET;
+const runtimeWindow = typeof window === "undefined" ? undefined : window;
+
+export const BOX_CLIENT_ID = runtimeWindow?.DEFAULT_BOX_CLIENT_ID ?? "";
+export const BOX_CLIENT_SECRET = runtimeWindow?.DEFAULT_BOX_CLIENT_SECRET ?? "";
 
 export interface BoxConfig {
   accessToken: string;
@@ -60,8 +63,9 @@ export interface BoxConfig {
 //////////////////////////////////////////////////////////
 
 export const COMMAND_CALLBACK_PCLOUD = "remotely-sync-cb-pcloud";
-export const PCLOUD_CLIENT_ID = global.DEFAULT_PCLOUD_CLIENT_ID;
-export const PCLOUD_CLIENT_SECRET = global.DEFAULT_PCLOUD_CLIENT_SECRET;
+export const PCLOUD_CLIENT_ID = runtimeWindow?.DEFAULT_PCLOUD_CLIENT_ID ?? "";
+export const PCLOUD_CLIENT_SECRET =
+  runtimeWindow?.DEFAULT_PCLOUD_CLIENT_SECRET ?? "";
 
 export interface PCloudConfig {
   accessToken: string;
@@ -82,8 +86,10 @@ export interface PCloudConfig {
 //////////////////////////////////////////////////////////
 
 export const COMMAND_CALLBACK_YANDEXDISK = "remotely-sync-cb-yandexdisk";
-export const YANDEXDISK_CLIENT_ID = global.DEFAULT_YANDEXDISK_CLIENT_ID;
-export const YANDEXDISK_CLIENT_SECRET = global.DEFAULT_YANDEXDISK_CLIENT_SECRET;
+export const YANDEXDISK_CLIENT_ID =
+  runtimeWindow?.DEFAULT_YANDEXDISK_CLIENT_ID ?? "";
+export const YANDEXDISK_CLIENT_SECRET =
+  runtimeWindow?.DEFAULT_YANDEXDISK_CLIENT_SECRET ?? "";
 
 export interface YandexDiskConfig {
   accessToken: string;
@@ -101,8 +107,9 @@ export interface YandexDiskConfig {
 //////////////////////////////////////////////////////////
 
 export const COMMAND_CALLBACK_KOOFR = "remotely-sync-cb-koofr";
-export const KOOFR_CLIENT_ID = global.DEFAULT_KOOFR_CLIENT_ID;
-export const KOOFR_CLIENT_SECRET = global.DEFAULT_KOOFR_CLIENT_SECRET;
+export const KOOFR_CLIENT_ID = runtimeWindow?.DEFAULT_KOOFR_CLIENT_ID ?? "";
+export const KOOFR_CLIENT_SECRET =
+  runtimeWindow?.DEFAULT_KOOFR_CLIENT_SECRET ?? "";
 
 export interface KoofrConfig {
   accessToken: string;

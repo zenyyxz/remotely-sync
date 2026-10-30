@@ -609,26 +609,15 @@ export const changeMobileStatusBar = (
   }
 
   if (op === "enable") {
-    const callback = async (
-      mutationList: MutationRecord[],
-      observer: MutationObserver
-    ) => {
+    const callback = (mutationList: MutationRecord[]) => {
       for (const mutation of mutationList) {
-        // console.debug(mutation);
         if (mutation.type === "childList" && mutation.addedNodes.length > 0) {
           const k = mutation.addedNodes[0] as Element;
           if (
             k.classList.contains("mobile-navbar") ||
             k.classList.contains("mobile-toolbar")
           ) {
-            // have to wait, otherwise the height is not correct??
-            await delay(300);
-            const height = window
-              .getComputedStyle(k as Element)
-              .getPropertyValue("height");
-
             statusbar.addClass("remotely-sync-mobile-status-bar");
-            statusbar.setCssProps({ "margin-bottom": height });
           }
         }
       }
@@ -641,17 +630,8 @@ export const changeMobileStatusBar = (
       subtree: false,
     });
 
-    try {
-      // init, manual call
-      const navBar = document.getElementsByClassName(
-        "mobile-navbar"
-      )[0] as HTMLElement;
-      // thanks to community's solution
-      const height = window.getComputedStyle(navBar).getPropertyValue("height");
+    if (document.getElementsByClassName("mobile-navbar").length > 0) {
       statusbar.addClass("remotely-sync-mobile-status-bar");
-      statusbar.setCssProps({ "margin-bottom": height });
-    } catch (e) {
-      // skip
     }
 
     return observer;
@@ -663,7 +643,6 @@ export const changeMobileStatusBar = (
       oldAppContainerObserver = undefined;
     }
     statusbar.removeClass("remotely-sync-mobile-status-bar");
-    statusbar.setCssProps({ "margin-bottom": "" });
     return undefined;
   }
 };

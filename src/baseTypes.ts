@@ -15,14 +15,20 @@ import type {
 import type { LangTypeAndAuto } from "./i18n";
 
 declare global {
-  var DEFAULT_DROPBOX_APP_KEY: string;
-  var DEFAULT_ONEDRIVE_CLIENT_ID: string;
-  var DEFAULT_ONEDRIVE_AUTHORITY: string;
+  interface Window {
+    DEFAULT_DROPBOX_APP_KEY: string;
+    DEFAULT_ONEDRIVE_CLIENT_ID: string;
+    DEFAULT_ONEDRIVE_AUTHORITY: string;
+  }
 }
 
-export const DROPBOX_APP_KEY = global.DEFAULT_DROPBOX_APP_KEY;
-export const ONEDRIVE_CLIENT_ID = global.DEFAULT_ONEDRIVE_CLIENT_ID;
-export const ONEDRIVE_AUTHORITY = global.DEFAULT_ONEDRIVE_AUTHORITY;
+const runtimeWindow = typeof window === "undefined" ? undefined : window;
+
+export const DROPBOX_APP_KEY = runtimeWindow?.DEFAULT_DROPBOX_APP_KEY ?? "";
+export const ONEDRIVE_CLIENT_ID =
+  runtimeWindow?.DEFAULT_ONEDRIVE_CLIENT_ID ?? "";
+export const ONEDRIVE_AUTHORITY =
+  runtimeWindow?.DEFAULT_ONEDRIVE_AUTHORITY ?? "";
 
 export const DEFAULT_CONTENT_TYPE = "application/octet-stream";
 
