@@ -1,37 +1,46 @@
-# Google Drive (GDrive)
+# Google Drive
 
-## Important scope and service notes
+Remotely Sync connects directly to Google's public Drive API. Google Drive is
+currently marked **beta**; back up your vault before using it.
 
-This plugin is **not an official Google product**; it uses Google Drive's public API. The plugin currently labels this provider **beta**, so **back up your vault before using it**.
+## Access and limitations
 
-The plugin requests Google's `drive.file` scope. It can only see, read, and write files and folders it created itself. Do not manually create the vault folder or upload files to it through Google's website: the plugin will not see those items. You can still view or download files at the [Google Drive website](https://drive.google.com/drive/u/0/my-drive). Google describes the benefits of the `drive.file` scope in its [API documentation](https://developers.google.com/drive/api/guides/api-specific-auth#benefits); the guide notes that this scope is “not-sensitive” and does not require the same complicated verification process.
+The plugin requests Google's `drive.file` scope. It can read and modify files
+that it creates, but does not see files uploaded manually through the Drive
+website. Google explains this scope in its
+[Drive API documentation](https://developers.google.com/drive/api/guides/api-specific-auth#benefits).
 
-Google Drive permits files with the same name in one folder. Duplicate files may stop the plugin from working; if that happens, remove the duplicate manually on Google's website.
+Google Drive allows duplicate names in a folder. Duplicates may prevent sync;
+remove them through the [Google Drive website](https://drive.google.com/).
 
-## Authorize the plugin
+## Connect your Google account
 
-Authorization uses a website because Google Drive's API does not fit the special environment of an Obsidian plugin.
+1. In Remotely Sync settings, choose Google Drive and click **Auth**.
+2. Open the authorization link in your browser and sign in to Google.
+3. Review and allow the requested Drive access.
+4. On the completion page, click **Open Remotely Sync** to return to Obsidian.
+5. Confirm the success notice, then sync. The plugin creates a vault folder in
+   the root of your Drive.
 
-1. In Remotely Sync settings, select Google Drive.
-   ![change remote to google drive](./change_remote_to_google_drive.png)
-2. Click **Auth** and open the link to begin on the Remotely Sync website.
-   ![visit start link](./google_drive_auth_link.png)
-3. On that website, follow the link to Google's authorization page.
-4. Follow Google's instructions and allow Remotely Sync to connect.
-   ![allow Remotely Sync in Google website](./google_drive_auth_allow.png)
-5. After redirection to the Remotely Sync website, copy the authorization code.
-   ![redirected back and get the code](./google_drive_auth_code_show.png)
-6. Paste the code into the plugin in Obsidian and submit it.
-   ![submit the code in setting](./google_drive_code_submit.png)
-7. Check the notice in the plugin to confirm whether the connection succeeded.
-8. Sync. The plugin creates a vault folder at the root of your Google Drive and uploads notes into it.
+Authorization uses the Remotely Sync OAuth service at
+`auth.lahirux.dev:8443` to
+complete Google's OAuth exchange. The service temporarily holds authorization
+state and one-time codes in memory; it does not persist Google tokens. The
+Google client secret remains on the service and is not included in the plugin
+or its build.
 
-## Credential handling
+Your refresh token is saved in your local Obsidian plugin settings. The service
+uses it to obtain short-lived access tokens when needed; refresh tokens are not
+stored by the service.
 
-The website does **not** store or save the Google Drive credential—the code obtained at the end of authorization. It is only a bridge to help obtain that code. The code is saved locally in Obsidian and works like a special password, allowing the plugin to upload, download, and modify files for you.
+## Troubleshooting
 
-## Troubleshooting and limitations
+- If the browser does not open Obsidian automatically, click **Open Remotely
+  Sync** on the completion page.
+- If Google says the app is in testing, the account must be listed as a test
+  user in the OAuth consent configuration.
+- If manually uploaded files do not appear, this is expected with the `drive.file`
+  scope.
+- If sync reports duplicate names, remove the duplicates in Google Drive.
 
-If authorization does not finish, follow the return-to-plugin flow and submit the code shown by the website. If files do not appear in the plugin, remember it only sees files and folders it created; manually uploaded items are outside its `drive.file` scope.
-
-For duplicate names, inspect Google Drive's website and remove the duplicate file manually if needed. Keep a vault backup while using this beta feature.
+Keep a vault backup while using this beta feature.

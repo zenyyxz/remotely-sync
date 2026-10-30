@@ -18,6 +18,7 @@ import {
 } from "obsidian";
 import {
   COMMAND_CALLBACK_BOX,
+  COMMAND_CALLBACK_GOOGLEDRIVE,
   COMMAND_CALLBACK_KOOFR,
   COMMAND_CALLBACK_ONEDRIVEFULL,
   COMMAND_CALLBACK_PCLOUD,
@@ -30,7 +31,10 @@ import {
   sendAuthReq as sendAuthReqBox,
   setConfigBySuccessfullAuthInplace as setConfigBySuccessfullAuthInplaceBox,
 } from "../features/src/fsBox";
-import { DEFAULT_GOOGLEDRIVE_CONFIG } from "../features/src/fsGoogleDrive";
+import {
+  DEFAULT_GOOGLEDRIVE_CONFIG,
+  exchangeGoogleDriveAuthorization,
+} from "../features/src/fsGoogleDrive";
 import {
   DEFAULT_KOOFR_CONFIG,
   sendAuthReq as sendAuthReqKoofr,
@@ -149,6 +153,7 @@ const DEFAULT_SETTINGS: RemotelySyncPluginSettings = {
 
 interface OAuth2Info {
   verifier?: string;
+  state?: string;
   helperModal?: Modal;
   authDiv?: HTMLElement;
   revokeDiv?: HTMLElement;
@@ -596,6 +601,83 @@ export default class RemotelySyncPlugin extends Plugin {
             params: JSON.stringify(inputParams),
           })
         );
+      }
+    );
+
+    this.registerObsidianProtocolHandler(
+      COMMAND_CALLBACK_GOOGLEDRIVE,
+      async (inputParams) => {
+        const modal = this.oauth2Info.helperModal;
+        if (modal === undefined) {
+          new Notice(t("protocol_googledrive_no_modal"));
+          return;
+        }
+        if (
+          inputParams.state === undefined ||
+          inputParams.state !== this.oauth2Info.state ||
+          this.oauth2Info.verifier === undefined ||
+          this.oauth2Info.verifier === ""
+        ) {
+          new Notice(t("protocol_googledrive_connect_fail"));
+          return;
+        }
+        if (inputParams.error !== undefined || inputParams.code === undefined) {
+          this.oauth2Info.state = "";
+          this.oauth2Info.verifier = "";
+          new Notice(t("protocol_googledrive_connect_fail"));
+          return;
+        }
+
+        modal.contentEl.empty();
+        t("protocol_googledrive_connecting")
+          .split("\n")
+          .forEach((value) => modal.contentEl.createEl("p", { text: value }));
+
+        const verifier = this.oauth2Info.verifier;
+        this.oauth2Info.state = "";
+        this.oauth2Info.verifier = "";
+        try {
+          const tokens = await exchangeGoogleDriveAuthorization(
+            inputParams.code,
+            inputParams.state,
+            verifier
+          );
+          if (this.settings.googledrive === undefined) {
+            this.settings.googledrive = cloneDeep(DEFAULT_GOOGLEDRIVE_CONFIG);
+          }
+          const config = this.settings.googledrive;
+          const refreshToken =
+            tokens.refresh_token ?? config.refreshToken;
+          if (refreshToken === "") {
+            throw Error("Google did not return a refresh token");
+          }
+          const currentTime = Date.now();
+          config.accessToken = tokens.access_token;
+          config.accessTokenExpiresInMs = tokens.expires_in * 1000;
+          config.accessTokenExpiresAtTimeMs =
+            currentTime + tokens.expires_in * 1000 - 120_000;
+          config.refreshToken = refreshToken;
+          config.credentialsShouldBeDeletedAtTimeMs =
+            currentTime + 59 * 24 * 60 * 60 * 1000;
+          await this.saveSettings();
+
+          new Notice(t("protocol_googledrive_connect_succ"));
+          modal.close();
+          this.oauth2Info.helperModal = undefined;
+          this.oauth2Info.authDiv?.toggleClass(
+            "googledrive-auth-button-hide",
+            config.refreshToken !== ""
+          );
+          this.oauth2Info.authDiv = undefined;
+          this.oauth2Info.revokeDiv?.toggleClass(
+            "googledrive-revoke-auth-button-hide",
+            config.refreshToken === ""
+          );
+          this.oauth2Info.revokeDiv = undefined;
+        } catch (error) {
+          console.error("Google Drive authorization failed", error);
+          new Notice(t("protocol_googledrive_connect_fail"));
+        }
       }
     );
 

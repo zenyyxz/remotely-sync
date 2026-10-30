@@ -1,0 +1,15 @@
+[Unit]
+Description=Dedicated Nginx for Remotely Sync OAuth
+After=network.target
+
+[Service]
+Type=simple
+ExecStartPre=/usr/sbin/nginx -t -q -c /etc/nginx/remotely-sync-auth.conf
+ExecStart=/usr/sbin/nginx -c /etc/nginx/remotely-sync-auth.conf -g "daemon off;"
+ExecReload=/usr/sbin/nginx -s reload -c /etc/nginx/remotely-sync-auth.conf
+ExecStop=/usr/sbin/nginx -s quit -c /etc/nginx/remotely-sync-auth.conf
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

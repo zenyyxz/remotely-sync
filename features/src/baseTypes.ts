@@ -3,8 +3,6 @@
 ////////////////////////////////////////////////////////////
 
 declare global {
-  var DEFAULT_GOOGLEDRIVE_CLIENT_ID: string;
-  var DEFAULT_GOOGLEDRIVE_CLIENT_SECRET: string;
   var DEFAULT_BOX_CLIENT_ID: string;
   var DEFAULT_BOX_CLIENT_SECRET: string;
   var DEFAULT_PCLOUD_CLIENT_ID: string;
@@ -25,6 +23,9 @@ export const MERGABLE_SIZE = 1000 * 1000; // 1 MB
 // Google Drive
 //////////////////////////////////////////////////////////
 
+export const COMMAND_CALLBACK_GOOGLEDRIVE =
+  "remotely-sync-cb-googledrive";
+
 export interface GoogleDriveConfig {
   accessToken: string;
   accessTokenExpiresInMs: number;
@@ -35,10 +36,6 @@ export interface GoogleDriveConfig {
   scope: "https://www.googleapis.com/auth/drive.file";
   kind: "googledrive";
 }
-
-export const GOOGLEDRIVE_CLIENT_ID = global.DEFAULT_GOOGLEDRIVE_CLIENT_ID;
-export const GOOGLEDRIVE_CLIENT_SECRET =
-  global.DEFAULT_GOOGLEDRIVE_CLIENT_SECRET;
 
 ///////////////////////////////////////////////////////////
 // box

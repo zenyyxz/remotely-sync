@@ -1,0 +1,25 @@
+[Unit]
+Description=Remotely Sync Google OAuth service
+After=network.target
+
+[Service]
+Type=simple
+User=remotely-sync-auth
+Group=remotely-sync-auth
+WorkingDirectory=/opt/remotely-sync-google-auth
+EnvironmentFile=/etc/remotely-sync-google-auth.env
+ExecStart=/usr/bin/node /opt/remotely-sync-google-auth/server.mjs
+Restart=on-failure
+RestartSec=5
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ProtectKernelTunables=true
+ProtectControlGroups=true
+RestrictAddressFamilies=AF_INET AF_INET6
+UMask=0077
+MemoryMax=128M
+
+[Install]
+WantedBy=multi-user.target

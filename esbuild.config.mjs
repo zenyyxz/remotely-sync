@@ -17,9 +17,6 @@ const prod = process.argv[2] === "production";
 const DEFAULT_DROPBOX_APP_KEY = process.env.DROPBOX_APP_KEY || "";
 const DEFAULT_ONEDRIVE_CLIENT_ID = process.env.ONEDRIVE_CLIENT_ID || "";
 const DEFAULT_ONEDRIVE_AUTHORITY = process.env.ONEDRIVE_AUTHORITY || "";
-const DEFAULT_GOOGLEDRIVE_CLIENT_ID = process.env.GOOGLEDRIVE_CLIENT_ID || "";
-const DEFAULT_GOOGLEDRIVE_CLIENT_SECRET =
-  process.env.GOOGLEDRIVE_CLIENT_SECRET || "";
 const DEFAULT_BOX_CLIENT_ID = process.env.BOX_CLIENT_ID || "";
 const DEFAULT_BOX_CLIENT_SECRET = process.env.BOX_CLIENT_SECRET || "";
 const DEFAULT_PCLOUD_CLIENT_ID = process.env.PCLOUD_CLIENT_ID || "";
@@ -55,7 +52,7 @@ esbuild
     inject: ["./esbuild.injecthelper.mjs"],
     format: "cjs",
     // watch: !prod, // no longer valid in esbuild 0.17
-    target: "es2016",
+    target: "es2020",
     logLevel: "info",
     sourcemap: prod ? false : "inline",
     treeShaking: true,
@@ -65,8 +62,6 @@ esbuild
       "global.DEFAULT_DROPBOX_APP_KEY": `"${DEFAULT_DROPBOX_APP_KEY}"`,
       "global.DEFAULT_ONEDRIVE_CLIENT_ID": `"${DEFAULT_ONEDRIVE_CLIENT_ID}"`,
       "global.DEFAULT_ONEDRIVE_AUTHORITY": `"${DEFAULT_ONEDRIVE_AUTHORITY}"`,
-      "global.DEFAULT_GOOGLEDRIVE_CLIENT_ID": `"${DEFAULT_GOOGLEDRIVE_CLIENT_ID}"`,
-      "global.DEFAULT_GOOGLEDRIVE_CLIENT_SECRET": `"${DEFAULT_GOOGLEDRIVE_CLIENT_SECRET}"`,
       "global.DEFAULT_BOX_CLIENT_ID": `"${DEFAULT_BOX_CLIENT_ID}"`,
       "global.DEFAULT_BOX_CLIENT_SECRET": `"${DEFAULT_BOX_CLIENT_SECRET}"`,
       "global.DEFAULT_PCLOUD_CLIENT_ID": `"${DEFAULT_PCLOUD_CLIENT_ID}"`,

@@ -14,10 +14,11 @@ import {
   unixTimeToStr,
 } from "../../src/misc";
 import {
-  GOOGLEDRIVE_CLIENT_ID,
-  GOOGLEDRIVE_CLIENT_SECRET,
   type GoogleDriveConfig,
 } from "./baseTypes";
+
+export const GOOGLE_DRIVE_AUTH_SERVICE_URL =
+  "https://auth.lahirux.dev:8443";
 
 export const DEFAULT_GOOGLEDRIVE_CONFIG: GoogleDriveConfig = {
   accessToken: "",
@@ -91,40 +92,77 @@ interface GDEntity extends Entity {
   isFolder: boolean;
 }
 
-/**
- * https://developers.google.com/identity/protocols/oauth2/web-server#httprest_7
- * @param refreshToken
- */
-export const sendRefreshTokenReq = async (refreshToken: string) => {
-  console.debug(`refreshing token`);
-  const x = await fetch("https://oauth2.googleapis.com/token", {
+export interface GoogleDriveOAuthTokens {
+  access_token: string;
+  expires_in: number;
+  refresh_token?: string;
+  scope?: string;
+  token_type?: string;
+}
+
+const postToGoogleAuthService = async (
+  endpoint: "exchange" | "refresh",
+  body: Record<string, string>
+): Promise<GoogleDriveOAuthTokens> => {
+  const response = await requestUrl({
+    url: `${GOOGLE_DRIVE_AUTH_SERVICE_URL}/google/${endpoint}`,
     method: "POST",
     headers: {
-      "Content-Type": "application/x-www-form-urlencoded",
+      "Content-Type": "application/json",
     },
-    body: new URLSearchParams({
-      client_id: GOOGLEDRIVE_CLIENT_ID ?? "",
-      client_secret: GOOGLEDRIVE_CLIENT_SECRET ?? "",
-      grant_type: "refresh_token",
-      refresh_token: refreshToken,
-    }).toString(),
+    body: JSON.stringify(body),
+    throw: false,
   });
 
-  if (x.status === 200) {
-    const y = await x.json();
-    console.debug(`new token obtained`);
-    return y;
-  } else {
-    throw Error(`cannot refresh an access token`);
+  if (response.status < 200 || response.status >= 300) {
+    throw Error(`Google authorization service returned ${response.status}`);
   }
 
-  // {
-  //   "access_token": "1/fFAGRNJru1FTz70BzhT3Zg",
-  //   "expires_in": 3920,
-  //   "scope": "https://www.googleapis.com/auth/drive.file",
-  //   "token_type": "Bearer"
-  // }
+  const tokens = response.json as GoogleDriveOAuthTokens;
+  if (
+    typeof tokens.access_token !== "string" ||
+    !Number.isFinite(tokens.expires_in)
+  ) {
+    throw Error("Google authorization service returned an invalid token response");
+  }
+  return tokens;
 };
+
+const toBase64Url = (bytes: Uint8Array) =>
+  btoa(Array.from(bytes, (byte) => String.fromCharCode(byte)).join(""))
+    .replace(/\+/g, "-")
+    .replace(/\//g, "_")
+    .replace(/=+$/, "");
+
+export const createGoogleDriveAuthRequest = async () => {
+  const state = toBase64Url(globalThis.crypto.getRandomValues(new Uint8Array(32)));
+  const verifier = toBase64Url(
+    globalThis.crypto.getRandomValues(new Uint8Array(32))
+  );
+  const challengeBytes = await globalThis.crypto.subtle.digest(
+    "SHA-256",
+    new TextEncoder().encode(verifier)
+  );
+  const challenge = toBase64Url(new Uint8Array(challengeBytes));
+  const authUrl = new URL("/google/start", GOOGLE_DRIVE_AUTH_SERVICE_URL);
+  authUrl.searchParams.set("state", state);
+  authUrl.searchParams.set("code_challenge", challenge);
+  return { authUrl: authUrl.toString(), state, verifier };
+};
+
+export const exchangeGoogleDriveAuthorization = async (
+  code: string,
+  state: string,
+  verifier: string
+) =>
+  postToGoogleAuthService("exchange", {
+    code,
+    state,
+    code_verifier: verifier,
+  });
+
+export const sendRefreshTokenReq = async (refreshToken: string) =>
+  postToGoogleAuthService("refresh", { refresh_token: refreshToken });
 
 const fromFileToGDEntity = (
   file: File,

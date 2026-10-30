@@ -6,8 +6,8 @@ import type RemotelySyncPlugin from "../../src/main";
 import { stringToFragment } from "../../src/misc";
 import { ChangeRemoteBaseDirModal } from "../../src/settings";
 import {
+  createGoogleDriveAuthRequest,
   DEFAULT_GOOGLEDRIVE_CONFIG,
-  sendRefreshTokenReq,
 } from "./fsGoogleDrive";
 
 class GoogleDriveAuthModal extends Modal {
@@ -36,7 +36,19 @@ class GoogleDriveAuthModal extends Modal {
     const { contentEl } = this;
     const t = this.t;
 
-    const authUrl = "https://remotelysave.com/auth/googledrive/start";
+    let authUrl: string;
+    try {
+      const authRequest = await createGoogleDriveAuthRequest();
+      authUrl = authRequest.authUrl;
+      this.plugin.oauth2Info.state = authRequest.state;
+      this.plugin.oauth2Info.verifier = authRequest.verifier;
+    } catch (error) {
+      console.error("Could not prepare Google Drive authorization", error);
+      new Notice(t("modal_googledrive_maualinput_fail_notice"));
+      this.close();
+      return;
+    }
+
     const div2 = contentEl.createDiv();
     div2.createDiv({
       text: stringToFragment(t("modal_googledriveauth_tutorial")),
@@ -59,68 +71,6 @@ class GoogleDriveAuthModal extends Modal {
       text: authUrl,
     });
 
-    let refreshToken = "";
-    new Setting(contentEl)
-      .setName(t("modal_googledrivce_maualinput"))
-      .setDesc(t("modal_googledrivce_maualinput_desc"))
-      .addText((text) =>
-        text
-          .setPlaceholder("")
-          .setValue("")
-          .onChange((val) => {
-            refreshToken = val.trim();
-          })
-      )
-      .addButton(async (button) => {
-        button.setButtonText(t("submit"));
-        button.onClick(async () => {
-          new Notice(t("modal_googledrive_maualinput_notice"));
-
-          try {
-            if (this.plugin.settings.googledrive === undefined) {
-              this.plugin.settings.googledrive = cloneDeep(
-                DEFAULT_GOOGLEDRIVE_CONFIG
-              );
-            }
-            this.plugin.settings.googledrive.refreshToken = refreshToken;
-            this.plugin.settings.googledrive.accessToken = "access";
-            this.plugin.settings.googledrive.accessTokenExpiresAtTimeMs = 1;
-            this.plugin.settings.googledrive.accessTokenExpiresInMs = 1;
-
-            // TODO: abstraction leaking now, how to fix?
-            const k = await sendRefreshTokenReq(refreshToken);
-            const ts = Date.now();
-            this.plugin.settings.googledrive.accessToken = k.access_token;
-            this.plugin.settings.googledrive.accessTokenExpiresInMs =
-              k.expires_in * 1000;
-            this.plugin.settings.googledrive.accessTokenExpiresAtTimeMs =
-              ts + k.expires_in * 1000 - 60 * 2 * 1000;
-
-            // manually set it expired after 60 days;
-            this.plugin.settings.googledrive.credentialsShouldBeDeletedAtTimeMs =
-              Date.now() + 1000 * 60 * 60 * 24 * 59;
-            await this.plugin.saveSettings();
-
-            // try to remove data in clipboard
-            await navigator.clipboard.writeText("");
-
-            new Notice(t("modal_googledrive_maualinput_succ_notice"));
-          } catch (e) {
-            console.error(e);
-            new Notice(t("modal_googledrive_maualinput_fail_notice"));
-          } finally {
-            this.authDiv.toggleClass(
-              "googledrive-auth-button-hide",
-              this.plugin.settings.googledrive.refreshToken !== ""
-            );
-            this.revokeAuthDiv.toggleClass(
-              "googledrive-revoke-auth-button-hide",
-              this.plugin.settings.googledrive.refreshToken === ""
-            );
-            this.close();
-          }
-        });
-      });
   }
 
   onClose() {
