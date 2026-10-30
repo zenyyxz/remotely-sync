@@ -1,7 +1,7 @@
 {
   "id": "remotely-sync",
-  "name": "Remotely Sync",
-  "version": "1.0.0",
+  "name": "NoteHarbor Sync",
+  "version": "1.0.1",
   "minAppVersion": "0.13.21",
   "description": "An unofficial Obsidian plugin for synchronizing notes across devices using cloud storage.",
   "author": "zenyyxz",
