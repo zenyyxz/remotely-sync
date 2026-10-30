@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Privacy Policy for the Remotely Sync Obsidian plugin and Google Drive authorization service.">
+    <title>Privacy Policy — Remotely Sync</title>
+    <style>
+      :root { color-scheme: light dark; font: 16px/1.6 system-ui, sans-serif; }
+      body { margin: 0; padding: 3rem 1.25rem; }
+      main { max-width: 46rem; margin: auto; }
+      h1, h2 { line-height: 1.25; }
+      a { color: #4388e8; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <p><a href="/">Remotely Sync</a></p>
+      <h1>Remotely Sync Privacy Policy</h1>
+      <p><strong>Effective date: October 30, 2026</strong></p>
+      <p>Remotely Sync is an open-source Obsidian plugin maintained by zenyyxz.
+      This policy explains what information the plugin and its Google Drive
+      authorization service handle.</p>
+
+      <h2>Information handled by the plugin</h2>
+      <p>Remotely Sync processes vault files, file names, file metadata, and
+      provider connection settings to synchronize the locations you select.
+      The plugin sends sync data directly between your Obsidian device and the
+      storage provider you configure. The Remotely Sync maintainer does not
+      receive or store your vault files through the Google authorization
+      service.</p>
+      <p>Provider credentials, including OAuth access and refresh tokens, are
+      stored in Obsidian's local plugin settings on your device. Obsidian stores
+      plugin settings in the vault's plugin data. Anyone or any software with
+      access to that device, vault, backups, or settings file may be able to
+      access those credentials. Keep your device and vault backups secure, and
+      do not share the plugin <code>data.json</code> file.</p>
+
+      <h2>Google Drive authorization service</h2>
+      <p>When you connect Google Drive, the plugin uses
+      <code>auth.lahirux.dev</code> to complete OAuth authorization. The service
+      handles the OAuth state and PKCE challenge, the temporary authorization
+      code returned by Google, and requests to exchange that code or refresh
+      token for Google tokens. These requests are forwarded to Google's OAuth
+      endpoints. The service does not receive your vault files.</p>
+      <p>Authorization state is held temporarily in memory for up to 10
+      minutes, and one-time authorization relay codes are held for up to 2
+      minutes. Refresh tokens are used to request access tokens from Google and
+      are not intentionally stored by the authorization service. The Google
+      OAuth client secret is stored on the service host for the purpose of
+      completing OAuth requests.</p>
+      <p>The service temporarily uses client IP addresses in memory for rate
+      limiting. It is configured not to write ordinary HTTP access logs, and
+      its application logs do not include OAuth request parameters or token
+      values. The service is hosted on Oracle Cloud Infrastructure; its
+      infrastructure provider may process network and operational information
+      as part of operating the server.</p>
+
+      <h2>Storage providers and third parties</h2>
+      <p>Your selected storage provider receives the files and metadata needed
+      to carry out your sync, subject to that provider's terms and privacy
+      policy. When using Google Drive, the plugin requests the Google Drive
+      <code>drive.file</code> scope. Google processes OAuth and Drive API
+      requests under its own policies. Other providers have their own terms and
+      privacy policies.</p>
+      <p>The plugin does not include advertising or analytics. It makes
+      network requests to the storage provider you configure and, for Google
+      Drive OAuth, to the Remotely Sync authorization service and Google.</p>
+
+      <h2>Encryption</h2>
+      <p>The plugin offers optional encryption for supported sync workflows. If
+      you enable it, keep your encryption password safe. Encryption does not
+      hide every piece of information, such as the vault name and information
+      required by your selected provider to store and synchronize files. Review
+      the encryption documentation and test your recovery process before
+      relying on it.</p>
+
+      <h2>Your choices and data deletion</h2>
+      <p>You can stop using a provider, revoke its authorization in the
+      provider's account settings, and remove saved credentials using the
+      plugin settings. Revoking authorization at the provider prevents future
+      authorized access but does not automatically delete files already stored
+      there. Delete remote files through the provider or plugin as
+      appropriate.</p>
+      <p>The authorization service's temporary OAuth state and relay codes
+      expire automatically or are removed after use. Removing the plugin or
+      its settings does not remove local vault files, backups, or remote
+      copies.</p>
+
+      <h2>Children's privacy</h2>
+      <p>Remotely Sync is a general-purpose software plugin and is not designed
+      to collect age or contact information from children. The maintainer does
+      not intentionally collect personal information through the plugin; the
+      Google authorization service does temporarily process request IP
+      addresses as described above.</p>
+
+      <h2>Changes to this policy</h2>
+      <p>This policy may be updated when the plugin or its services change. The
+      latest version will be published with the Remotely Sync source
+      repository, with its effective date updated when applicable.</p>
+
+      <h2>Contact</h2>
+      <p>For privacy questions or requests, contact the maintainer through the
+      <a href="https://github.com/zenyyxz/remotely-sync">Remotely Sync GitHub
+      repository</a>.</p>
+    </main>
+  </body>
+</html>

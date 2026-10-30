@@ -47,6 +47,11 @@ then issue a certificate with Certbot using the webroot `/var/www/html` for
 dedicated service. Enable it at boot. The port-80 server redirects to HTTPS on
 8443 after certificate issuance.
 
+Install the files from `public/` into `/var/www/remotely-sync-auth/` so the
+homepage is available at `https://auth.lahirux.dev:8443/` and the privacy
+policy at `https://auth.lahirux.dev:8443/privacy`. The homepage links to the
+policy and describes the plugin; keep both pages public and up to date.
+
 The Nginx site disables access logs and limits error logs so OAuth codes in
 callback query strings are not written to ordinary request logs. The service
 never logs request parameters or token values.
