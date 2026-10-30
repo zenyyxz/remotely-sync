@@ -35,12 +35,17 @@ GOOGLE_CLIENT_ID=your-client-id.apps.googleusercontent.com
 GOOGLE_CLIENT_SECRET=your-client-secret
 ```
 
-Install `deploy/nginx-auth-http.conf` as an Nginx site, validate with `nginx
--t`, and reload Nginx. Issue a certificate with Certbot using the webroot
-`/var/www/html` for `auth.lahirux.dev`. Then replace the temporary site with
-`deploy/nginx-auth.lahirux.dev.conf`, validate again, and reload Nginx. The
-port-80 server redirects to HTTPS on 8443. Enable and start the systemd service
-after the environment file is in place.
+Run a separate Nginx instance for the auth service so it does not change the
+VM's other Nginx configuration. Install `deploy/nginx-auth-http.conf` as
+`/etc/nginx-remotely-sync-auth/nginx.conf` and
+`deploy/nginx-remotely-sync-auth.service` as
+`/etc/systemd/system/remotely-sync-auth-nginx.service`. Start that service,
+then issue a certificate with Certbot using the webroot `/var/www/html` for
+`auth.lahirux.dev`. Replace the temporary HTTP config with
+`deploy/nginx-auth.lahirux.dev.conf`, validate with
+`nginx -t -c /etc/nginx-remotely-sync-auth/nginx.conf`, then reload the
+dedicated service. Enable it at boot. The port-80 server redirects to HTTPS on
+8443 after certificate issuance.
 
 The Nginx site disables access logs and limits error logs so OAuth codes in
 callback query strings are not written to ordinary request logs. The service

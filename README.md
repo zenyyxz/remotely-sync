@@ -56,6 +56,8 @@ If a sync result is unexpected, pause automatic syncing and preserve both local 
 
 Remotely Sync is an independent project based on the open-source Remotely Save codebase. Report issues or suggestions in the [GitHub repository](https://github.com/zenyyxz/remotely-sync). Cloud providers may charge fees and impose usage limits; check their terms before syncing.
 
+See the [Privacy Policy](./PRIVACY_POLICY.md) for information about data handled by the plugin and Google Drive authorization service.
+
 ## License
 
 The project source code is licensed under the [Apache License 2.0](./LICENSE).

@@ -85,6 +85,13 @@ interface File {
   sha256Checksum?: string;
 }
 
+interface GoogleDriveFilesResponse {
+  files?: File[];
+  error?: {
+    message?: string;
+  };
+}
+
 interface GDEntity extends Entity {
   id: string;
   parentID: string | undefined;
@@ -251,7 +258,20 @@ export class FakeFsGoogleDrive extends FakeFs {
         },
       });
 
-      const k1: { files: File[] } = await k.json();
+      const k1: GoogleDriveFilesResponse = await k.json();
+      if (!k.ok) {
+        const apiMessage = k1.error?.message;
+        throw Error(
+          `Google Drive folder search failed (HTTP ${k.status})${
+            apiMessage ? `: ${apiMessage}` : ""
+          }`
+        );
+      }
+      if (!Array.isArray(k1.files)) {
+        throw Error(
+          "Google Drive folder search returned an invalid response (missing files list)"
+        );
+      }
       // console.debug(k1);
       if (k1.files.length > 0) {
         // yeah we find it

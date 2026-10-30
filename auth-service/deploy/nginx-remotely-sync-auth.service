@@ -1,0 +1,16 @@
+[Unit]
+Description=Remotely Sync OAuth Nginx proxy
+After=network.target
+
+[Service]
+Type=forking
+PIDFile=/run/nginx-remotely-sync-auth.pid
+ExecStartPre=/usr/sbin/nginx -t -c /etc/nginx-remotely-sync-auth/nginx.conf
+ExecStart=/usr/sbin/nginx -c /etc/nginx-remotely-sync-auth/nginx.conf
+ExecReload=/usr/sbin/nginx -s reload -c /etc/nginx-remotely-sync-auth/nginx.conf
+ExecStop=/usr/sbin/nginx -s quit -c /etc/nginx-remotely-sync-auth/nginx.conf
+TimeoutStopSec=5
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target
