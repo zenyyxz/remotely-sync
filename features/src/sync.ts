@@ -1731,7 +1731,7 @@ export const doActualSync = async (
   profiler?.addIndent();
   profiler?.insert("doActualSync: enter");
   console.debug(`concurrency === ${concurrency}`);
-  const {
+  let {
     onlyMarkSyncedOps,
     folderCreationOps,
     deletionOps,
@@ -1740,6 +1740,58 @@ export const doActualSync = async (
     realModifyDeleteCount,
     realTotalCount,
   } = splitFourStepsOnEntityMappings(mixedEntityMappings);
+
+  const wouldAbortForTooManyChanges =
+    protectModifyPercentage >= 0 &&
+    realModifyDeleteCount >= 0 &&
+    allFilesCount > 0 &&
+    !(
+      protectModifyPercentage === 100 && realModifyDeleteCount === allFilesCount
+    ) &&
+    realModifyDeleteCount * 100 >= allFilesCount * protectModifyPercentage;
+
+  if (wouldAbortForTooManyChanges) {
+    for (const val of Object.values(mixedEntityMappings)) {
+      if (
+        val.key === "/$@meta" ||
+        !val.key ||
+        val.key.endsWith("/") ||
+        !val.change ||
+        val.local === undefined ||
+        val.remote === undefined ||
+        val.local.sizeEnc === undefined ||
+        val.local.sizeEnc !== val.remote.sizeEnc ||
+        val.local.keyRaw === undefined
+      ) {
+        continue;
+      }
+
+      const localContent = new Uint8Array(
+        await fsLocal.readFile(val.local.keyRaw)
+      );
+      const remoteContent = new Uint8Array(await fsEncrypt.readFile(val.key));
+      if (
+        localContent.length === remoteContent.length &&
+        localContent.every((byte, index) => byte === remoteContent[index])
+      ) {
+        val.decisionBranch = 2;
+        val.decision = "equal";
+        val.change = false;
+        val.prevSync = undefined;
+      }
+    }
+
+    ({
+      onlyMarkSyncedOps,
+      folderCreationOps,
+      deletionOps,
+      uploadDownloads,
+      allFilesCount,
+      realModifyDeleteCount,
+      realTotalCount,
+    } = splitFourStepsOnEntityMappings(mixedEntityMappings));
+  }
+
   // console.debug(`onlyMarkSyncedOps: ${JSON.stringify(onlyMarkSyncedOps)}`);
   // console.debug(`folderCreationOps: ${JSON.stringify(folderCreationOps)}`);
   // console.debug(`deletionOps: ${JSON.stringify(deletionOps)}`);

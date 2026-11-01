@@ -1,6 +1,6 @@
 {
   "name": "remotely-sync",
-  "version": "1.0.6",
+  "version": "1.0.7",
   "description": "Synchronize vault files across devices using your choice of cloud storage.",
   "scripts": {
     "dev2": "node esbuild.config.mjs --watch",
