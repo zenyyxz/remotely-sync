@@ -105,7 +105,7 @@ describe("Google Drive filesystem", () => {
     const query = new URL(requests[0]).searchParams.get("q");
     assert.equal(
       query,
-      "name='student\\'s \\\\ vault' and mimeType='application/vnd.google-apps.folder' and trashed=false"
+      "'root' in parents and name='student\\'s \\\\ vault' and mimeType='application/vnd.google-apps.folder' and trashed=false"
     );
   });
 
@@ -259,6 +259,21 @@ describe("Google Drive filesystem", () => {
     }
   });
 
+  it("propagates folder-listing failures from the walk", async () => {
+    const fs = makeFs();
+    const originalFetch = globalThis.fetch;
+    globalThis.fetch = async () => new Response(null, { status: 500 });
+
+    try {
+      await assert.rejects(
+        fs.walk(),
+        /cannot walk for parentID=vault-folder-id/
+      );
+    } finally {
+      globalThis.fetch = originalFetch;
+    }
+  });
+
   it("uses a resumable update for an existing large file", async () => {
     const fs = makeFs();
     const key = "笔记.md";
@@ -316,5 +331,69 @@ describe("Google Drive filesystem", () => {
     assert.equal(requests[1].url, "https://upload.example/session");
     assert.equal(requests[2].init?.method, "PUT");
     assert.equal(requests[2].url, "https://upload.example/session");
+  });
+
+  it("sends a JSON body when moving a Drive file to trash", async () => {
+    const fs = makeFs();
+    fs.keyToGDEntity["note.md"] = {
+      id: "file-to-delete-id",
+      key: "note.md",
+      keyRaw: "note.md",
+      parentID: "vault-folder-id",
+      parentIDPath: "",
+      isFolder: false,
+      sizeRaw: 4,
+    };
+    const originalFetch = globalThis.fetch;
+    let request: { url: string; init?: RequestInit } | undefined;
+    globalThis.fetch = async (input, init) => {
+      request = { url: String(input), init };
+      return new Response(null, { status: 200 });
+    };
+
+    try {
+      await fs.rm("note.md");
+    } finally {
+      globalThis.fetch = originalFetch;
+    }
+
+    assert.ok(request);
+    assert.match(request.url, /\/files\/file-to-delete-id$/);
+    assert.equal(request.init?.method, "PATCH");
+    assert.equal(
+      new Headers(request.init?.headers).get("Content-Type"),
+      "application/json"
+    );
+    assert.deepEqual(JSON.parse(String(request.init?.body)), {
+      trashed: true,
+    });
+  });
+
+  it("awaits the access token before revoking Google authorization", async () => {
+    const fs = makeFs();
+    const originalFetch = globalThis.fetch;
+    let request: { url: string; init?: RequestInit } | undefined;
+    globalThis.fetch = async (input, init) => {
+      request = { url: String(input), init };
+      return new Response(null, { status: 200 });
+    };
+
+    try {
+      await fs.revokeAuth();
+    } finally {
+      globalThis.fetch = originalFetch;
+    }
+
+    assert.ok(request);
+    assert.equal(request.url, "https://oauth2.googleapis.com/revoke");
+    assert.equal(request.init?.method, "POST");
+    assert.equal(
+      new Headers(request.init?.headers).get("Content-Type"),
+      "application/x-www-form-urlencoded"
+    );
+    assert.equal(
+      new URLSearchParams(String(request.init?.body)).get("token"),
+      "test-access-token"
+    );
   });
 });

@@ -252,7 +252,7 @@ export class FakeFsGoogleDrive extends FakeFs {
       // pass
     } else {
       const q = encodeURIComponent(
-        `name='${escapeGoogleDriveQueryString(this.remoteBaseDir)}' and mimeType='application/vnd.google-apps.folder' and trashed=false`
+        `'root' in parents and name='${escapeGoogleDriveQueryString(this.remoteBaseDir)}' and mimeType='application/vnd.google-apps.folder' and trashed=false`
       );
       const url: string = `https://www.googleapis.com/drive/v3/files?q=${q}&pageSize=1000&fields=kind,nextPageToken,files(kind,fileExtension,md5Checksum,mimeType,parents,size,spaces,id,name,trashed,createdTime,modifiedTime,quotaBytesUsed,originalFilename,fullFileExtension,sha1Checksum,sha256Checksum)`;
       const k = await fetch(url, {
@@ -345,11 +345,6 @@ export class FakeFsGoogleDrive extends FakeFs {
       concurrency: 5, // TODO: make it configurable?
       autoStart: true,
     });
-    queue.on("error", (error) => {
-      queue.pause();
-      queue.clear();
-      throw error;
-    });
 
     let parents = [
       {
@@ -359,29 +354,37 @@ export class FakeFsGoogleDrive extends FakeFs {
     ];
     while (parents.length !== 0) {
       const children: typeof parents = [];
+      const tasks: Promise<void>[] = [];
       for (const { id, folderPath } of parents) {
-        queue.add(async () => {
-          const filesUnderFolder = await this._walkFolder(id, folderPath);
-          for (const f of filesUnderFolder) {
-            allFiles.push(f);
-            if (f.isFolder) {
-              // keyRaw itself already has a tailing slash, no more slash here
-              // keyRaw itself also already has full path
-              const child = {
-                id: f.id,
-                folderPath: f.keyRaw,
-              };
-              // console.debug(
-              //   `looping result of _walkFolder(${id},${folderPath}), adding child=${JSON.stringify(
-              //     child
-              //   )}`
-              // );
-              children.push(child);
+        tasks.push(
+          queue.add(async () => {
+            const filesUnderFolder = await this._walkFolder(id, folderPath);
+            for (const f of filesUnderFolder) {
+              allFiles.push(f);
+              if (f.isFolder) {
+                // keyRaw itself already has a tailing slash, no more slash here
+                // keyRaw itself also already has full path
+                const child = {
+                  id: f.id,
+                  folderPath: f.keyRaw,
+                };
+                // console.debug(
+                //   `looping result of _walkFolder(${id},${folderPath}), adding child=${JSON.stringify(
+                //     child
+                //   )}`
+                // );
+                children.push(child);
+              }
             }
-          }
-        });
+          })
+        );
       }
-      await queue.onIdle();
+      const results = await Promise.allSettled(tasks);
+      for (const result of results) {
+        if (result.status === "rejected") {
+          throw result.reason;
+        }
+      }
       parents = children;
     }
 
@@ -796,6 +799,7 @@ export class FakeFsGoogleDrive extends FakeFs {
       {
         method: "PATCH",
         headers: {
+          "Content-Type": "application/json",
           Authorization: `Bearer ${await this._getAccessToken()}`,
         },
         body: JSON.stringify({
@@ -828,15 +832,14 @@ export class FakeFsGoogleDrive extends FakeFs {
    * https://developers.google.com/identity/protocols/oauth2/web-server#tokenrevoke
    */
   async revokeAuth(): Promise<any> {
-    const x = await fetch(
-      `https://oauth2.googleapis.com/revoke?token=${this._getAccessToken()}`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/x-www-form-urlencoded",
-        },
-      }
-    );
+    const accessToken = await this._getAccessToken();
+    const x = await fetch("https://oauth2.googleapis.com/revoke", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded",
+      },
+      body: new URLSearchParams({ token: accessToken }),
+    });
     if (x.status === 200) {
       return true;
     } else {
