@@ -146,6 +146,9 @@ interface IsSkipResult {
   finalIsIgnored: boolean;
 }
 
+const matchesPathPattern = (pattern: string, key: string) =>
+  XRegExp(`(?:^|/)${pattern}`, "A").test(key);
+
 export const checkIsSkipItemOrNotByName = (
   key: string,
   syncConfigDir: boolean,
@@ -171,7 +174,7 @@ export const checkIsSkipItemOrNotByName = (
       }
       enableAllowMode = true; // we really want to check the allow list
 
-      if (XRegExp(r, "A").test(key)) {
+      if (matchesPathPattern(r, key)) {
         isExplictlyAllowed = true;
       }
     }
@@ -193,7 +196,7 @@ export const checkIsSkipItemOrNotByName = (
         // ignore empty lines
         continue;
       }
-      if (XRegExp(r, "A").test(key)) {
+      if (matchesPathPattern(r, key)) {
         if (finalIsIgnored === undefined) {
           isExplictlyIgnored = true;
           finalIsIgnored = true;
@@ -1854,6 +1857,7 @@ export const doActualSync = async (
   ];
 
   let realCounter = 0;
+  let filesSyncedCount = 0;
   for (let i = 0; i < nested.length; ++i) {
     profiler?.addIndent();
     profiler?.insert(`doActualSync: step ${i} start`);
@@ -1906,6 +1910,12 @@ export const doActualSync = async (
             db,
             conflictAction
           );
+          if (
+            !key.endsWith("/") &&
+            (i === 3 || (i === 2 && val.decision !== "only_history"))
+          ) {
+            filesSyncedCount += 1;
+          }
 
           // console.debug(`finished ${key}`);
         };
@@ -1939,6 +1949,7 @@ export const doActualSync = async (
 
   profiler?.insert(`doActualSync: exit`);
   profiler?.removeIndent();
+  return filesSyncedCount;
 };
 
 export type SyncStatusType =
@@ -1969,7 +1980,11 @@ export async function syncer(
   settings: RemotelySyncPluginSettings,
   getProtectModifyPercentageErrorStrFunc: any,
   markIsSyncingFunc: (isSyncing: boolean) => void,
-  notifyFunc?: (s: SyncTriggerSourceType, step: number) => Promise<any>,
+  notifyFunc?: (
+    s: SyncTriggerSourceType,
+    step: number,
+    filesSyncedCount?: number
+  ) => Promise<any>,
   errNotifyFunc?: (s: SyncTriggerSourceType, error: Error) => Promise<any>,
   ribboonFunc?: (s: SyncTriggerSourceType, step: number) => Promise<any>,
   statusBarFunc?: (
@@ -1984,6 +1999,7 @@ export async function syncer(
 
   let everythingOk = true;
   let step = 0;
+  let filesSyncedCount: number | undefined;
 
   try {
     // try mode?
@@ -2092,7 +2108,7 @@ export async function syncer(
       await notifyFunc?.(triggerSource, step);
       await ribboonFunc?.(triggerSource, step);
       await statusBarFunc?.(triggerSource, step, everythingOk);
-      await doActualSync(
+      filesSyncedCount = await doActualSync(
         mixedEntityMappings,
         fsLocal,
         fsEncrypt,
@@ -2130,7 +2146,11 @@ export async function syncer(
   await profiler?.save(db, vaultRandomID, settings.serviceType);
 
   step = 8;
-  await notifyFunc?.(triggerSource, step);
+  await notifyFunc?.(
+    triggerSource,
+    step,
+    everythingOk ? filesSyncedCount : undefined
+  );
   await ribboonFunc?.(triggerSource, step);
   await statusBarFunc?.(triggerSource, step, everythingOk);
 

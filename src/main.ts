@@ -289,7 +289,11 @@ export default class RemotelySyncPlugin extends Plugin {
       }
     };
 
-    const notifyFunc = async (s: SyncTriggerSourceType, step: number) => {
+    const notifyFunc = async (
+      s: SyncTriggerSourceType,
+      step: number,
+      filesSyncedCount?: number
+    ) => {
       switch (step) {
         case 0:
           if (s === "dry") {
@@ -377,7 +381,13 @@ export default class RemotelySyncPlugin extends Plugin {
           break;
 
         case 8:
-          if (this.settings.currLogLevel === "info") {
+          if (filesSyncedCount !== undefined) {
+            if (this.settings.currLogLevel === "info") {
+              getNotice(s, t("syncrun_shortstep2count", { filesSyncedCount }));
+            } else {
+              getNotice(s, t("syncrun_step8count", { filesSyncedCount }));
+            }
+          } else if (this.settings.currLogLevel === "info") {
             getNotice(s, t("syncrun_shortstep2"));
           } else {
             getNotice(s, t("syncrun_step8"));

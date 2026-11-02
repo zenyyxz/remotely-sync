@@ -213,6 +213,30 @@ describe("Sync: checkIsSkipItemOrNotByName", () => {
     // assert.ok(!isSkip);
   });
 
+  it("matches ignore rules at path boundaries, not within file names", () => {
+    const ignoredGitFolder = checkIsSkipItemOrNotByName(
+      ".git/config",
+      false,
+      false,
+      false,
+      ".obsidian",
+      [".git"],
+      []
+    );
+    assert.ok(ignoredGitFolder.finalIsIgnored);
+
+    const lessonFour = checkIsSkipItemOrNotByName(
+      "03 - ICT/Lesson 04 - Digital Logic Gates & Circuits.md",
+      false,
+      false,
+      false,
+      ".obsidian",
+      [".git"],
+      []
+    );
+    assert.ok(!lessonFour.finalIsIgnored);
+  });
+
   it("should detect the name by two lists together", async () => {
     // should skip because we ignore the path
     let isSkip = checkIsSkipItemOrNotByName(
@@ -297,5 +321,57 @@ describe("Sync: protect modify percentage", () => {
       ),
       /too many changes/
     );
+  });
+});
+
+describe("Sync: completed file count", () => {
+  it("counts a file only after its upload operation succeeds", async () => {
+    const content = new Uint8Array([1, 2, 3]).buffer;
+    const localEntity: Entity = {
+      key: "note.md",
+      keyRaw: "note.md",
+      size: content.byteLength,
+      sizeEnc: content.byteLength,
+      sizeRaw: content.byteLength,
+      mtimeCli: 2,
+    };
+    const plan: Record<string, MixedEntity> = {
+      "note.md": {
+        key: "note.md",
+        local: localEntity,
+        remote: { ...localEntity, mtimeCli: 1, mtimeSvr: 1 },
+        decision: "local_is_modified_then_push",
+        change: true,
+      },
+    };
+    const localFs = {
+      kind: "local",
+      stat: async () => localEntity,
+      readFile: async () => content,
+    } as unknown as FakeFs;
+    const fsEncrypt = {
+      kind: "remote",
+      writeFile: async () => ({ ...localEntity, mtimeSvr: 2 }),
+    } as unknown as FakeFsEncrypt;
+    const db = {
+      prevSyncRecordsTbl: { setItem: async () => {} },
+    } as unknown as InternalDBs;
+
+    const count = await doActualSync(
+      plan,
+      localFs,
+      fsEncrypt,
+      "vault-id",
+      "profile-id",
+      1,
+      -1,
+      () => "too many changes",
+      db,
+      undefined,
+      "keep_newer",
+      "manual"
+    );
+
+    assert.equal(count, 1);
   });
 });
