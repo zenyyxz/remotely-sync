@@ -118,9 +118,6 @@ describe("Google Drive filesystem", () => {
     const requests: Array<{ url: string; init?: RequestInit }> = [];
     globalThis.fetch = async (input, init) => {
       requests.push({ url: String(input), init });
-      if (requests.length === 1) {
-        return makeFileListResponse([]);
-      }
       return makeFileResponse("new-file-id", "2026-10-30T12:00:00.000Z");
     };
 
@@ -132,11 +129,10 @@ describe("Google Drive filesystem", () => {
       globalThis.fetch = originalFetch;
     }
 
-    assert.equal(requests.length, 2);
-    assert.equal(requests[0].init?.method, "GET");
-    assert.equal(requests[1].init?.method, "POST");
-    assert.match(requests[1].url, /\/files\?/);
-    const formData = requests[1].init?.body as FormData;
+    assert.equal(requests.length, 1);
+    assert.equal(requests[0].init?.method, "POST");
+    assert.match(requests[0].url, /\/files\?/);
+    const formData = requests[0].init?.body as FormData;
     const metadata = JSON.parse(
       await (formData.get("metadata") as Blob).text()
     );
@@ -160,17 +156,6 @@ describe("Google Drive filesystem", () => {
     const requests: Array<{ url: string; init?: RequestInit }> = [];
     globalThis.fetch = async (input, init) => {
       requests.push({ url: String(input), init });
-      if (requests.length === 1) {
-        return makeFileListResponse([
-          {
-            id: "existing-file-id",
-            name: "note.md",
-            mimeType: "text/markdown",
-            size: "4",
-            modifiedTime: "2026-10-30T12:00:00.000Z",
-          },
-        ]);
-      }
       return makeFileResponse("existing-file-id", "2026-10-30T12:00:00.000Z");
     };
 
@@ -182,11 +167,10 @@ describe("Google Drive filesystem", () => {
       globalThis.fetch = originalFetch;
     }
 
-    assert.equal(requests.length, 2);
-    assert.equal(requests[0].init?.method, "GET");
-    assert.equal(requests[1].init?.method, "PATCH");
-    assert.match(requests[1].url, /\/files\/existing-file-id\?/);
-    const formData = requests[1].init?.body as FormData;
+    assert.equal(requests.length, 1);
+    assert.equal(requests[0].init?.method, "PATCH");
+    assert.match(requests[0].url, /\/files\/existing-file-id\?/);
+    const formData = requests[0].init?.body as FormData;
     const metadata = JSON.parse(
       await (formData.get("metadata") as Blob).text()
     );
@@ -195,46 +179,26 @@ describe("Google Drive filesystem", () => {
     assert.equal("createdTime" in metadata, false);
   });
 
-  it("reuses a remote file on consecutive writes when the cache misses", async () => {
+  it("creates an uncached file without a Drive name search", async () => {
     const fs = makeFs();
     const originalFetch = globalThis.fetch;
     const requests: Array<{ url: string; init?: RequestInit }> = [];
     globalThis.fetch = async (input, init) => {
       requests.push({ url: String(input), init });
-      if (init?.method === "GET") {
-        return makeFileListResponse([
-          {
-            id: "existing-file-id",
-            name: "note.md",
-            mimeType: "text/markdown",
-            size: "4",
-            modifiedTime: "2026-10-30T12:00:00.000Z",
-          },
-        ]);
-      }
-      return makeFileResponse("existing-file-id", "2026-10-30T12:00:00.000Z");
+      return makeFileResponse("new-file-id", "2026-10-30T12:00:00.000Z");
     };
 
     try {
-      await withMoment(async () => {
-        await fs.writeFile("note.md", new ArrayBuffer(4), 1_798_000_000_000, 1);
-        delete fs.keyToGDEntity["note.md"];
-        await fs.writeFile("note.md", new ArrayBuffer(4), 1_798_000_000_000, 1);
-      });
+      await withMoment(() =>
+        fs.writeFile("note.md", new ArrayBuffer(4), 1_798_000_000_000, 1)
+      );
     } finally {
       globalThis.fetch = originalFetch;
     }
 
-    const uploads = requests.filter(
-      (request) => request.init?.method !== "GET"
-    );
-    assert.equal(uploads.length, 2);
-    assert.ok(uploads.every((request) => request.init?.method === "PATCH"));
-    assert.ok(
-      uploads.every((request) =>
-        request.url.includes("/files/existing-file-id?")
-      )
-    );
+    assert.equal(requests.length, 1);
+    assert.equal(requests[0].init?.method, "POST");
+    assert.match(requests[0].url, /\/files\?/);
   });
 
   it("selects the most recently modified same-name remote file", async () => {
@@ -353,23 +317,12 @@ describe("Google Drive filesystem", () => {
     globalThis.fetch = async (input, init) => {
       requests.push({ url: String(input), init });
       if (requests.length === 1) {
-        return makeFileListResponse([
-          {
-            id: "existing-large-file-id",
-            name: key,
-            mimeType: "text/markdown",
-            size: String(5 * 1024 * 1024 + 1),
-            modifiedTime: "2026-10-30T12:00:00.000Z",
-          },
-        ]);
-      }
-      if (requests.length === 2) {
         return new Response(null, {
           status: 200,
           headers: { Location: "https://upload.example/session" },
         });
       }
-      if (requests.length === 3) {
+      if (requests.length === 2) {
         return new Response(null, { status: 308 });
       }
       return makeFileResponse(
@@ -391,19 +344,18 @@ describe("Google Drive filesystem", () => {
       globalThis.fetch = originalFetch;
     }
 
-    assert.equal(requests.length, 4);
-    assert.equal(requests[0].init?.method, "GET");
-    assert.equal(requests[1].init?.method, "PATCH");
-    assert.match(requests[1].url, /\/files\/existing-large-file-id\?/);
-    const metadataBody = requests[1].init?.body as string;
+    assert.equal(requests.length, 3);
+    assert.equal(requests[0].init?.method, "PATCH");
+    assert.match(requests[0].url, /\/files\/existing-large-file-id\?/);
+    const metadataBody = requests[0].init?.body as string;
     assert.equal(
-      new Headers(requests[1].init?.headers).get("Content-Length"),
+      new Headers(requests[0].init?.headers).get("Content-Length"),
       String(new TextEncoder().encode(metadataBody).byteLength)
     );
+    assert.equal(requests[1].init?.method, "PUT");
+    assert.equal(requests[1].url, "https://upload.example/session");
     assert.equal(requests[2].init?.method, "PUT");
     assert.equal(requests[2].url, "https://upload.example/session");
-    assert.equal(requests[3].init?.method, "PUT");
-    assert.equal(requests[3].url, "https://upload.example/session");
   });
 
   it("sends a JSON body when moving a Drive file to trash", async () => {

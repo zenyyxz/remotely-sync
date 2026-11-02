@@ -87,7 +87,6 @@ interface File {
 
 interface GoogleDriveFilesResponse {
   files?: File[];
-  nextPageToken?: string;
   error?: {
     message?: string;
   };
@@ -457,65 +456,6 @@ export class FakeFsGoogleDrive extends FakeFs {
     return filesOneLevel;
   }
 
-  async _findExistingFile(
-    fileName: string,
-    parentID: string,
-    parentFolderPath: string | undefined
-  ): Promise<GDEntity | undefined> {
-    let nextPageToken: string | undefined;
-    let latestFile: GDEntity | undefined;
-    do {
-      const query = encodeURIComponent(
-        `'${escapeGoogleDriveQueryString(parentID)}' in parents and name='${escapeGoogleDriveQueryString(fileName)}' and trashed=false`
-      );
-      const pageToken = nextPageToken
-        ? `&pageToken=${encodeURIComponent(nextPageToken)}`
-        : "";
-      const response = await fetch(
-        `https://www.googleapis.com/drive/v3/files?q=${query}&pageSize=1000&fields=nextPageToken,files(id,name,mimeType,size,modifiedTime,createdTime,md5Checksum)${pageToken}`,
-        {
-          method: "GET",
-          headers: {
-            Authorization: `****** this._getAccessToken()}`,
-          },
-        }
-      );
-      if (!response.ok) {
-        throw Error(
-          `cannot search existing Google Drive file ${fileName} in ${parentID} (HTTP ${response.status})`
-        );
-      }
-
-      const result: GoogleDriveFilesResponse = await response.json();
-      if (!Array.isArray(result.files)) {
-        throw Error(
-          `Google Drive file search returned an invalid response for ${fileName}`
-        );
-      }
-      for (const file of result.files) {
-        if (
-          file.mimeType === FOLDER_MIME_TYPE ||
-          file.name !== fileName ||
-          !file.id
-        ) {
-          continue;
-        }
-        const entity = fromFileToGDEntity(file, parentID, parentFolderPath);
-        if (
-          latestFile === undefined ||
-          (entity.mtimeSvr ?? 0) > (latestFile.mtimeSvr ?? 0) ||
-          ((entity.mtimeSvr ?? 0) === (latestFile.mtimeSvr ?? 0) &&
-            entity.id.localeCompare(latestFile.id) > 0)
-        ) {
-          latestFile = entity;
-        }
-      }
-      nextPageToken = result.nextPageToken;
-    } while (nextPageToken !== undefined);
-
-    return latestFile;
-  }
-
   async walkPartial(): Promise<Entity[]> {
     await this._init();
     const filesInLevel = await this._walkFolder(this.baseDirID, "");
@@ -667,17 +607,7 @@ export class FakeFsGoogleDrive extends FakeFs {
     if (parentID === undefined) {
       throw Error(`cannot determine parent folder for ${key}`);
     }
-    const cachedEntity = this.keyToGDEntity[key];
-    const remoteEntity = await this._findExistingFile(
-      fileItself,
-      parentID,
-      parentFolderPath
-    );
-    const existingEntity = remoteEntity ?? cachedEntity;
-    if (existingEntity !== undefined) {
-      this.keyToGDEntity[key] = existingEntity;
-    }
-    const existingFileID = existingEntity?.id;
+    const existingFileID = this.keyToGDEntity[key]?.id;
     const isUpdate = existingFileID !== undefined;
 
     if (content.byteLength <= 5 * 1024 * 1024) {
